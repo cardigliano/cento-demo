@@ -1,0 +1,31 @@
+# cat Dockerfile 
+# syntax=docker/dockerfile:1.2
+# check=error=true
+
+FROM rockylinux:9
+ADD https://packages.ntop.org/centos/ntop.repo /etc/yum.repos.d/ntop.repo
+RUN dnf --assumeyes install epel-release
+RUN dnf config-manager --set-enabled crb
+
+RUN dnf --assumeyes clean all
+RUN dnf --assumeyes update
+RUN dnf --assumeyes install ncurses file
+RUN dnf --assumeyes install cento
+RUN dnf --assumeyes clean all
+
+RUN echo "/opt/napatech3/lib" > /etc/ld.so.conf.d/napatech3.conf
+
+RUN mkdir -p /opt/ntop/cento/ntpl
+RUN mkdir -p /opt/ntop/cento/scripts
+
+ADD ntpl/*.ntpl /opt/ntop/cento/ntpl
+
+ADD scripts/common.sh /opt/ntop/cento/scripts
+ADD scripts/apply_ntpl.sh /opt/ntop/cento/scripts
+ADD scripts/run_cento_bridge.sh /opt/ntop/cento/scripts
+ADD scripts/run.sh /opt/ntop/cento/scripts
+RUN chmod +x /opt/ntop/cento/scripts/run.sh
+
+WORKDIR /opt/ntop/cento
+
+ENTRYPOINT ["/opt/ntop/cento/scripts/run.sh"]
